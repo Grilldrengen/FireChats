@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Fire Chat</string>
+
+    <string name="facebook_app_id" translatable="false">383975665494242</string>
+    <string name="fb_login_protocol_scheme" translatable="false">fb383975665494242</string>
+    <string name="chat">Chat Rooms</string>
+    <string name="sign_out">SIGN OUT</string>
+</resources>
