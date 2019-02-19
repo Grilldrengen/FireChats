@@ -6,12 +6,14 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate
+import com.google.firebase.FirebaseApp
 
 class App : Application() {
 
     // Called when the application is starting, before any other application objects have been created.
     override fun onCreate() {
         super.onCreate()
+        FirebaseApp.initializeApp(this)
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
 
     }

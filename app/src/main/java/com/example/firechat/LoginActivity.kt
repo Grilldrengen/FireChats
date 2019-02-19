@@ -41,7 +41,6 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.AppTheme)
         super.onCreate(savedInstanceState)
-        FirebaseApp.initializeApp(this)
         AppEventsLogger.activateApp(application)
         setContentView(R.layout.activity_login)
 

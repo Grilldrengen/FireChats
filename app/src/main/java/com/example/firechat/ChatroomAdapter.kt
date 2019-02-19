@@ -1,17 +1,19 @@
 package com.example.firechat
 
 import android.content.Context
-import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
-import androidx.annotation.LayoutRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.recyclerview.widget.RecyclerView
 import com.example.firechat.models.Room
+import com.example.firechat.services.inflate
 import kotlinx.android.synthetic.main.item_room.view.*
+import org.jetbrains.anko.startActivity
 
-class ChatroomAdapter(private val context: Context, private val rooms: MutableList<Room>): RecyclerView.Adapter<ChatroomAdapter.Holder>() {
+class ChatroomAdapter(private val context: Context): RecyclerView.Adapter<ChatroomAdapter.Holder>() {
+
+    private var rooms = emptyList<Room>()
+
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val itemData = rooms[position]
         holder.bind(itemData)
@@ -23,6 +25,11 @@ class ChatroomAdapter(private val context: Context, private val rooms: MutableLi
     }
 
     override fun getItemCount() = rooms.size
+
+    internal fun setRooms(rooms: List<Room>) {
+        this.rooms = rooms
+        notifyDataSetChanged()
+    }
 
     inner class Holder(private var view: View): RecyclerView.ViewHolder(view) {
 
@@ -41,14 +48,7 @@ class ChatroomAdapter(private val context: Context, private val rooms: MutableLi
         }
 
         private fun onImageClick() {
-            //itemView.context.startActivity<ChatActivity>("id" to holderData?.id)
-            Toast.makeText(context, "This is my Image message!",
-                Toast.LENGTH_LONG).show();
-
+            itemView.context.startActivity<ChatActivity>("id" to holderData?.id)
         }
-    }
-
-    fun ViewGroup.inflate(@LayoutRes layoutRes: Int, attachToRoot: Boolean = false): View {
-        return LayoutInflater.from(context).inflate(layoutRes, this, attachToRoot)
     }
 }
