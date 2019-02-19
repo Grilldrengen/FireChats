@@ -7,8 +7,9 @@ import android.util.Log
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.firechat.db.authInstance
+import com.example.firechat.data.authInstance
 import com.example.firechat.models.Room
+import com.example.firechat.repositories.RoomRepository
 import com.facebook.appevents.AppEventsLogger
 import com.facebook.login.LoginManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -25,42 +26,20 @@ class ChatroomActivity : AppCompatActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var adapter: ChatroomAdapter
     private lateinit var firestoreListener: ListenerRegistration
-    private lateinit var db: FirebaseFirestore
-
-    companion object {
-        const val TAG = "ChatroomActivity"
-    }
+    private var roomRepository: RoomRepository = RoomRepository()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
         AppEventsLogger.activateApp(application)
         setContentView(R.layout.activity_chat)
-        db = FirebaseFirestore.getInstance()
-
 
         loadRoomList()
 
-        firestoreListener = db.collection("chatrooms")
-            .addSnapshotListener(EventListener { documentSnapshots, e ->
-                if (e != null) {
-                    Log.e(TAG, "Listen failed!", e)
-                    return@EventListener
-                }
-
-                val roomList = mutableListOf<Room>()
-
-                for (doc in documentSnapshots!!) {
-                    val room = doc.toObject(Room::class.java)
-                    room.id = doc.id
-                    room.name = doc.getString("Name")
-                    room.description = doc.getString("Description")
-                    roomList.add(room)
-                }
-
-                adapter = ChatroomAdapter(applicationContext, roomList)
-                rv_chatroom_list.adapter = adapter
-            })
+        firestoreListener = roomRepository.roomListener.first.also {
+            adapter = ChatroomAdapter(applicationContext, roomRepository.roomListener.second)
+            rv_chatroom_list.adapter = adapter
+        }
 
         //Google
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -82,31 +61,11 @@ class ChatroomActivity : AppCompatActivity() {
     }
 
     private fun loadRoomList() {
-        db.collection("chatrooms")
-            .get()
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-
-                    val roomList = mutableListOf<Room>()
-
-                    for (doc in task.result!!) {
-                        val room = doc.toObject(Room::class.java)
-                        room.id = doc.id
-                        room.name = doc.getString("Name")
-                        room.description = doc.getString("Description")
-                        roomList.add(room)
-                        Log.d(TAG, "---------------Roomxz----${room}-----${room.name}----${room.description}")
-                    }
-
-                    rv_chatroom_list.layoutManager = LinearLayoutManager(this)
-                    rv_chatroom_list.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
-                    rv_chatroom_list.itemAnimator = DefaultItemAnimator()
-                    adapter = ChatroomAdapter(applicationContext, roomList)
-                    rv_chatroom_list.adapter = adapter
-                } else {
-                    Log.d(TAG, "Error getting documents: ", task.exception)
-                }
-            }
+        rv_chatroom_list.layoutManager = LinearLayoutManager(this)
+        rv_chatroom_list.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
+        rv_chatroom_list.itemAnimator = DefaultItemAnimator()
+        adapter = ChatroomAdapter(applicationContext, roomRepository.allRooms)
+        rv_chatroom_list.adapter = adapter
     }
 
     private fun signOut(){

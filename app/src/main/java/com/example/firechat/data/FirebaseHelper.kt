@@ -1,4 +1,4 @@
-package com.example.firechat.db
+package com.example.firechat.data
 
 import com.google.firebase.auth.FirebaseAuth
 
