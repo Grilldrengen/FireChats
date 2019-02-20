@@ -5,4 +5,6 @@
     <string name="fb_login_protocol_scheme" translatable="false">fb383975665494242</string>
     <string name="chat">Chat Rooms</string>
     <string name="sign_out">SIGN OUT</string>
+    <string name="sign_out_menu">Sign Out</string>
+    <string name="permission_read_explanation">Du skal give tilladelse til at se billeder</string>
 </resources>

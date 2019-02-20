@@ -18,13 +18,13 @@ class RoomDao() {
 
     fun getAllRooms(): Task<QuerySnapshot> {
         val docRef = roomsRef
-        Log.d(TAG, "Checking CollectionReference exists for: chatrooms")
+        Log.d(TAG, "GetAll: chatrooms")
         return docRef.get()
     }
 
     fun roomListener(): CollectionReference {
         val docRef = roomsRef
-        Log.d(TAG, "Checking CollectionReference exists for: chatrooms")
+        Log.d(TAG, "roomListener: chatrooms")
         return docRef
     }
 }

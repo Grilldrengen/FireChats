@@ -3,13 +3,12 @@ package com.example.firechat
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.example.firechat.data.RoomDao
 import com.example.firechat.data.authInstance
 import com.example.firechat.models.Room
 import com.example.firechat.repositories.RoomRepository
@@ -29,10 +28,17 @@ class ChatroomActivity : AppCompatActivity() {
     private lateinit var firestoreListener: ListenerRegistration
     private var roomRepository: RoomRepository = RoomRepository()
 
+    companion object {
+        const val TAG = "ChatroomActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppEventsLogger.activateApp(application)
         setContentView(R.layout.activity_chatroom)
+
+        val actionBar = supportActionBar
+        actionBar!!.title = "Chat Rooms"
 
         adapter = ChatroomAdapter(applicationContext)
 
@@ -40,7 +46,7 @@ class ChatroomActivity : AppCompatActivity() {
 
         firestoreListener = roomRepository.roomListener.addSnapshotListener(EventListener { documentSnapshots, e ->
             if (e != null) {
-                Log.e(RoomDao.TAG, "Listen failed!", e)
+                Log.e(TAG, "Listen failed!", e)
                 return@EventListener
             }
 
@@ -49,8 +55,8 @@ class ChatroomActivity : AppCompatActivity() {
             for (doc in documentSnapshots!!) {
                 val room = doc.toObject(Room::class.java)
                 room.id = doc.id
-                room.name = doc.getString("Name")
-                room.description = doc.getString("Description")
+                room.name = doc.getString("name")
+                room.description = doc.getString("description")
                 roomList.add(room)
             }
 
@@ -60,7 +66,6 @@ class ChatroomActivity : AppCompatActivity() {
 
         sr_chatroom.setOnRefreshListener {
             refreshList()
-
         }
 
         //Google
@@ -70,10 +75,24 @@ class ChatroomActivity : AppCompatActivity() {
             .build()
 
         googleSignInClient = GoogleSignIn.getClient(this, gso)
+    }
 
-        sign_out_btn.setOnClickListener {
-            signOut()
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        // Inflate the menu to use in the action bar
+        val inflater = menuInflater
+        inflater.inflate(R.menu.toolbar_menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // Handle presses on the action bar menu items
+        when (item.itemId) {
+            R.id.action_sign_out -> {
+                signOut()
+                return true
+            }
         }
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onDestroy() {
@@ -91,8 +110,8 @@ class ChatroomActivity : AppCompatActivity() {
                 for (doc in task.result!!) {
                     val room = doc.toObject(Room::class.java)
                     room.id = doc.id
-                    room.name = doc.getString("Name")
-                    room.description = doc.getString("Description")
+                    room.name = doc.getString("name")
+                    room.description = doc.getString("description")
                     roomList.add(room)
                 }
 
@@ -103,7 +122,7 @@ class ChatroomActivity : AppCompatActivity() {
                 rv_chatroom_list.adapter = adapter
 
             } else {
-                Log.d(RoomDao.TAG, "Error getting documents: ", task.exception)
+                Log.d(TAG, "Error getting documents: ", task.exception)
             }
         }
     }
@@ -117,8 +136,8 @@ class ChatroomActivity : AppCompatActivity() {
                 for (doc in task.result!!) {
                     val room = doc.toObject(Room::class.java)
                     room.id = doc.id
-                    room.name = doc.getString("Name")
-                    room.description = doc.getString("Description")
+                    room.name = doc.getString("name")
+                    room.description = doc.getString("description")
                     roomList.add(room)
                 }
 
@@ -128,17 +147,27 @@ class ChatroomActivity : AppCompatActivity() {
                 sr_chatroom.isRefreshing = false
 
             } else {
-                Log.d(RoomDao.TAG, "Error getting documents: ", task.exception)
+                Log.d(TAG, "Error getting documents: ", task.exception)
             }
         }
     }
 
     private fun signOut(){
-        authInstance.signOut()
-
-        LoginManager.getInstance().logOut()
-        googleSignInClient.signOut()
-
+        val user = authInstance.currentUser
+        if (user != null) {
+            for (item in user.providerData){
+                when (item.providerId) {
+                    "google.com" -> {
+                        authInstance.signOut()
+                        googleSignInClient.signOut()
+                    }
+                    "facebook.com" -> {
+                        authInstance.signOut()
+                        LoginManager.getInstance().logOut()
+                    }
+                }
+            }
+        }
         val loginIntent = Intent(this, LoginActivity::class.java)
         startActivity(loginIntent)
     }

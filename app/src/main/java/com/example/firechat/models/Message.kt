@@ -4,8 +4,12 @@ import android.widget.ImageView
 import java.util.*
 
 data class Message (
-    var senderName: String? = null,
-    var senderAvatar: ImageView? = null,
-    var text: String? = null,
+    var id: String = "",
+    var senderName: String? = "",
+    var avatarUrl: String? = "",
+    var photoUrl: String? = "",
+    var text: String? = "",
     var date: Date? = null
-)
+) {
+
+}
