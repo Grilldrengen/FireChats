@@ -10,7 +10,7 @@ import com.example.firechat.services.inflate
 import kotlinx.android.synthetic.main.item_room.view.*
 import org.jetbrains.anko.startActivity
 
-class ChatroomAdapter(private val context: Context): RecyclerView.Adapter<ChatroomAdapter.Holder>() {
+class ChatroomAdapter(): RecyclerView.Adapter<ChatroomAdapter.Holder>() {
 
     private var rooms = emptyList<Room>()
 
@@ -43,7 +43,7 @@ class ChatroomAdapter(private val context: Context): RecyclerView.Adapter<Chatro
             this.holderData = holderData
             view.name_tv.text = holderData.name
             view.desc_tv.text = holderData.description
-            view.chevron_imageView.setImageDrawable(AppCompatResources.getDrawable(context, R.drawable.ic_chevron_right_black_24dp))
+            view.chevron_imageView.setImageDrawable(AppCompatResources.getDrawable(itemView.context, R.drawable.ic_chevron_right_black_24dp))
 
         }
 

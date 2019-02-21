@@ -105,6 +105,9 @@ class LoginActivity : AppCompatActivity() {
                 firebaseAuthWithGoogle(account!!)
             } catch (e: ApiException) {
                 // Google Sign In failed, update UI appropriately
+                alert("Sign In failed", "Sign in") {
+                    yesButton { }
+                }.show()
                 Log.w(TAG, "Google sign in failed", e)
             }
         }
@@ -125,7 +128,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     //Google
-
     private fun firebaseAuthWithGoogle(acct: GoogleSignInAccount) {
         Log.d(TAG, "firebaseAuthWithGoogle:" + acct.id!!)
 
@@ -151,7 +153,7 @@ class LoginActivity : AppCompatActivity() {
                     // If sign in fails, display a Message to the user.
                     Log.w(TAG, "signInWithCredential:failure", task.exception)
 
-                    alert("Authentication failed", "Authentication") {
+                    alert("Sign In failed", "Sign in") {
                         yesButton { }
                     }.show()
 

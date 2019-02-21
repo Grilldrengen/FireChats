@@ -1,6 +1,5 @@
 package com.example.firechat.models
 
-import android.widget.ImageView
 import java.util.*
 
 data class Message (
@@ -9,7 +8,5 @@ data class Message (
     var avatarUrl: String? = "",
     var photoUrl: String? = "",
     var text: String? = "",
-    var date: Date? = null
-) {
-
-}
+    var date: String? = ""
+)

@@ -12,10 +12,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.firechat.data.authInstance
 import com.example.firechat.models.Message
 import com.example.firechat.repositories.MessageRepository
-import com.facebook.appevents.AppEventsLogger
 import com.example.firechat.services.Datetime
 import com.example.firechat.services.checkPermission
 import com.example.firechat.services.requestPermissionForWrite
+import com.facebook.appevents.AppEventsLogger
 import com.facebook.login.LoginManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -23,6 +23,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.firestore.EventListener
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.android.synthetic.main.activity_chat.*
+
 
 class ChatActivity : AppCompatActivity() {
 
@@ -59,7 +60,7 @@ class ChatActivity : AppCompatActivity() {
 
         loadMessageList()
 
-        firestoreListener = messageRepository.messageListener(id!!).addSnapshotListener(EventListener { documentSnapshots, e ->
+        firestoreListener = messageRepository.messageListener.whereEqualTo("id", id!!).limit(50).addSnapshotListener(EventListener { documentSnapshots, e ->
             if (e != null) {
                 Log.e(TAG, "Listen failed!", e)
                 return@EventListener
@@ -72,7 +73,7 @@ class ChatActivity : AppCompatActivity() {
                 message.id = doc.id
                 message.senderName = doc.getString("senderName")
                 message.text = doc.getString("text")
-                message.date = doc.getDate("date")
+                message.date = doc.getString("date")
 
                 //TODO fill firestor with photoUrl so loadMessageList can show meassages with pictures
                 message.photoUrl = doc.getString("photoUrl")
@@ -141,22 +142,22 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun loadMessageList() {
-        messageRepository.allMessages(id!!).addOnCompleteListener { task ->
+        messageRepository.allMessages.whereEqualTo("id", id!!).limit(50).get().addOnCompleteListener { task ->
             if (task.isSuccessful) {
 
                 val messageList = mutableListOf<Message>()
 
                 for (doc in task.result!!) {
-                    val message = doc.toObject(Message::class.java)
-                    message.id = doc.id
-                    message.senderName = doc.getString("senderName")
-                    message.text = doc.getString("text")
-                    message.date = doc.getDate("date")
+                        val message = doc.toObject(Message::class.java)
+                        message.id = doc.id
+                        message.senderName = doc.getString("senderName")
+                        message.text = doc.getString("text")
+                        message.date = doc.getString("date")
 
-                    //TODO fill firestore with photoUrl so loadMessageList can show meassages with pictures
-                    message.photoUrl = doc.getString("photoUrl")
-                    message.avatarUrl = doc.getString("avatarUrl")
-                    messageList.add(message)
+                        //TODO fill firestore with photoUrl so loadMessageList can show meassages with pictures
+                        message.photoUrl = doc.getString("photoUrl")
+                        message.avatarUrl = doc.getString("avatarUrl")
+                        messageList.add(message)
                 }
 
                 adapter.setMessages(messageList)
@@ -169,21 +170,21 @@ class ChatActivity : AppCompatActivity() {
 
     private fun sendMessage() {
         val user = authInstance.currentUser
-        val message = HashMap<String, Any>()
+        val message = hashMapOf<String, Any>()
 
         if (user != null) {
             message["id"] = id.toString()
             message["senderName"] = user.displayName.toString()
-            message["text"] = edit_message.text
-            message["date"] = Datetime()
+            message["text"] = edit_message.text.toString()
+            message["date"] = Datetime().toString()
             message["avatarUrl"] = user.photoUrl.toString()
             message["photoUrl"] = ""
         }
 
         //TODO få den til at tilføje en message
-        messageRepository.addMessage(message)
+        messageRepository.addMessage.document().set(message)
             .addOnSuccessListener { documentReference ->
-            Log.d(TAG, "DocumentSnapshot written with ID: " + documentReference.id)
+                Log.d(TAG, "")
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Error adding document", e)

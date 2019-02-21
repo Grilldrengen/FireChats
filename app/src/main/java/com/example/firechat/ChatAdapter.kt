@@ -44,7 +44,7 @@ class ChatAdapter(): RecyclerView.Adapter<ChatAdapter.Holder>() {
         fun bind(holderData: Message) {
             this.holderData = holderData
             view.tv_name.text = holderData.senderName
-            view.tv_date.text = holderData.date.toString()
+            view.tv_date.text = holderData.date
             view.tv_message.text = holderData.text
 
             //TODO User should be able to add random picture from phone

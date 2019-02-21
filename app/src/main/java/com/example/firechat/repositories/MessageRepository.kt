@@ -11,9 +11,10 @@ import com.google.firebase.firestore.QuerySnapshot
 class MessageRepository() {
     private val messageDao: MessageDao = MessageDao()
 
-    fun allMessages(id: String) = messageDao.getAllMessages(id)
+    val allMessages = messageDao.getAllMessages()
 
-    fun addMessage(message: HashMap<String, Any>) = messageDao.addMessage(message)
+    val addMessage = messageDao.addMessage()
 
-    fun messageListener(id: String) = messageDao.messageListener(id)
+    //fun messageListener(id: String) = messageDao.messageListener(id)
+    val messageListener = messageDao.messageListener()
 }

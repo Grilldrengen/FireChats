@@ -14,22 +14,21 @@ class MessageDao {
         const val TAG = "MessageDao"
     }
 
-    fun addMessage(message: HashMap<String, Any>): Task<DocumentReference> {
+    fun addMessage(): CollectionReference {
         val docRef = messagesRef
         Log.d(TAG, "Add: messages")
-        return docRef.add(message)
+        return docRef
     }
 
-    fun getAllMessages(id: String): Task<QuerySnapshot> {
+    fun getAllMessages(): CollectionReference {
         val docRef = messagesRef
         Log.d(TAG, "GetAll: messages")
-        return docRef.get()
+        return docRef
     }
 
-    fun messageListener(id: String): Query {
+    fun messageListener(): CollectionReference {
         val docRef = messagesRef
         Log.d(TAG, "messageListener: messages")
-        return docRef.whereEqualTo("id", id).limit(50)
+        return docRef
     }
-
 }

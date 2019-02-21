@@ -24,7 +24,7 @@ import kotlinx.android.synthetic.main.activity_chatroom.*
 class ChatroomActivity : AppCompatActivity() {
 
     private lateinit var googleSignInClient: GoogleSignInClient
-    private lateinit var adapter: ChatroomAdapter
+    private var adapter: ChatroomAdapter = ChatroomAdapter()
     private lateinit var firestoreListener: ListenerRegistration
     private var roomRepository: RoomRepository = RoomRepository()
 
@@ -40,7 +40,10 @@ class ChatroomActivity : AppCompatActivity() {
         val actionBar = supportActionBar
         actionBar!!.title = "Chat Rooms"
 
-        adapter = ChatroomAdapter(applicationContext)
+        rv_chatroom_list.layoutManager = LinearLayoutManager(this)
+        rv_chatroom_list.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
+        rv_chatroom_list.itemAnimator = DefaultItemAnimator()
+        rv_chatroom_list.adapter = adapter
 
         loadRoomList()
 
@@ -61,7 +64,7 @@ class ChatroomActivity : AppCompatActivity() {
             }
 
             adapter.setRooms(roomList)
-            rv_chatroom_list.adapter = adapter
+
         })
 
         sr_chatroom.setOnRefreshListener {
@@ -115,11 +118,7 @@ class ChatroomActivity : AppCompatActivity() {
                     roomList.add(room)
                 }
 
-                rv_chatroom_list.layoutManager = LinearLayoutManager(this)
-                rv_chatroom_list.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
-                rv_chatroom_list.itemAnimator = DefaultItemAnimator()
                 adapter.setRooms(roomList)
-                rv_chatroom_list.adapter = adapter
 
             } else {
                 Log.d(TAG, "Error getting documents: ", task.exception)
@@ -142,7 +141,6 @@ class ChatroomActivity : AppCompatActivity() {
                 }
 
                 adapter.setRooms(roomList)
-                rv_chatroom_list.adapter = adapter
 
                 sr_chatroom.isRefreshing = false
 
