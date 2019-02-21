@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "1079804979782-4smr14vhfeoq3fpr9qlaqdk3jf9si5st.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.firechat",
+            "certificate_hash": "22d5e9209d123542be7bd71a0ad12a0bacafad51"
+          }
+        },
+        {
           "client_id": "1079804979782-biupcn69v8395q4kjvfd46vnqlk4qad3.apps.googleusercontent.com",
           "client_type": 3
         }
