@@ -86,8 +86,6 @@ class ChatActivity : AppCompatActivity() {
                 message.senderName = doc.getString("senderName")
                 message.text = doc.getString("text")
                 message.date = doc.getTimestamp("date")?.toDate()
-
-                //TODO fill firestor with photoUrl so loadMessageList can show meassages with pictures
                 message.photoUrl = doc.getString("photoUrl")
                 message.avatarUrl = doc.getString("avatarUrl")
                 messageList.add(message)
@@ -147,11 +145,7 @@ class ChatActivity : AppCompatActivity() {
             if (resultCode == RESULT_OK) {
                 if (data != null) {
                     filePath = data.data
-
-                    //TODO save image in firestore
                     uploadImage()
-
-                    //sendMessage("image", "")
                 }
             }
         }
