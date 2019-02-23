@@ -1,6 +1,7 @@
 package com.example.firechat
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -12,7 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.firechat.data.authInstance
 import com.example.firechat.models.Message
 import com.example.firechat.repositories.MessageRepository
-import com.example.firechat.services.Datetime
+import com.example.firechat.repositories.RoomRepository
 import com.example.firechat.services.checkPermission
 import com.example.firechat.services.requestPermissionForWrite
 import com.facebook.appevents.AppEventsLogger
@@ -20,9 +21,18 @@ import com.facebook.login.LoginManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.tasks.Continuation
+import com.google.android.gms.tasks.Task
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.EventListener
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.storage.StorageMetadata
+import com.google.firebase.storage.UploadTask
 import kotlinx.android.synthetic.main.activity_chat.*
+import org.jetbrains.anko.alert
+import org.jetbrains.anko.yesButton
+import java.io.File
+import java.util.*
 
 
 class ChatActivity : AppCompatActivity() {
@@ -31,6 +41,8 @@ class ChatActivity : AppCompatActivity() {
     private var adapter: ChatAdapter = ChatAdapter()
     private lateinit var firestoreListener: ListenerRegistration
     private var messageRepository: MessageRepository = MessageRepository()
+    private var roomRepository: RoomRepository = RoomRepository()
+    private var filePath: Uri? = null
     private var id: String? = ""
 
     companion object {
@@ -44,7 +56,9 @@ class ChatActivity : AppCompatActivity() {
         setContentView(R.layout.activity_chat)
 
         val actionBar = supportActionBar
-        actionBar!!.title = "Chat Messages"
+        actionBar?.setDisplayHomeAsUpEnabled(true);
+        actionBar?.setDisplayShowHomeEnabled(true)
+        actionBar?.title = "Chat Messages"
 
         rv_messages.layoutManager = LinearLayoutManager(this)
         rv_messages.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
@@ -58,9 +72,7 @@ class ChatActivity : AppCompatActivity() {
             }
         }
 
-        loadMessageList()
-
-        firestoreListener = messageRepository.messageListener.whereEqualTo("id", id!!).limit(50).addSnapshotListener(EventListener { documentSnapshots, e ->
+        firestoreListener = messageRepository.messageListener.whereEqualTo("id", id!!).orderBy("date").limit(50).addSnapshotListener(EventListener { documentSnapshots, e ->
             if (e != null) {
                 Log.e(TAG, "Listen failed!", e)
                 return@EventListener
@@ -73,7 +85,7 @@ class ChatActivity : AppCompatActivity() {
                 message.id = doc.id
                 message.senderName = doc.getString("senderName")
                 message.text = doc.getString("text")
-                message.date = doc.getString("date")
+                message.date = doc.getTimestamp("date")?.toDate()
 
                 //TODO fill firestor with photoUrl so loadMessageList can show meassages with pictures
                 message.photoUrl = doc.getString("photoUrl")
@@ -91,16 +103,19 @@ class ChatActivity : AppCompatActivity() {
 
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-        btn_send_message.setOnClickListener { sendMessage() }
+        btn_send_message.setOnClickListener { sendMessage("text", "") }
 
         imageView_add_image.setOnClickListener {
-            if(!checkPermission(applicationContext, 4)){
-                requestPermissionForWrite(applicationContext)
+            if(!checkPermission(this, 4)){
+                requestPermissionForWrite(this)
             }
-            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-            intent.addCategory(Intent.CATEGORY_OPENABLE)
-            intent.type = "image/*"
-            startActivityForResult(intent, REQUEST_IMAGE)
+            else {
+                if (checkPermission(this, 4)) {
+                    val intent = Intent(Intent.ACTION_GET_CONTENT)
+                    intent.type = "image/*"
+                    startActivityForResult(intent, REQUEST_IMAGE)
+                }
+            }
         }
     }
 
@@ -114,6 +129,9 @@ class ChatActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         // Handle presses on the action bar menu items
         when (item.itemId) {
+            android.R.id.home -> {
+                finish()
+            }
             R.id.action_sign_out -> {
                 signOut()
                 return true
@@ -128,8 +146,12 @@ class ChatActivity : AppCompatActivity() {
         if (requestCode == REQUEST_IMAGE) {
             if (resultCode == RESULT_OK) {
                 if (data != null) {
-                    val uri = data.data
+                    filePath = data.data
+
                     //TODO save image in firestore
+                    uploadImage()
+
+                    //sendMessage("image", "")
                 }
             }
         }
@@ -141,54 +163,112 @@ class ChatActivity : AppCompatActivity() {
         firestoreListener.remove()
     }
 
-    private fun loadMessageList() {
-        messageRepository.allMessages.whereEqualTo("id", id!!).limit(50).get().addOnCompleteListener { task ->
-            if (task.isSuccessful) {
+    private fun uploadImage() {
 
-                val messageList = mutableListOf<Message>()
+        // Create the file metadata
+        val metadata = StorageMetadata.Builder()
+            .setContentType("image/jpeg")
+            .build()
 
-                for (doc in task.result!!) {
-                        val message = doc.toObject(Message::class.java)
-                        message.id = doc.id
-                        message.senderName = doc.getString("senderName")
-                        message.text = doc.getString("text")
-                        message.date = doc.getString("date")
+        // Upload file and metadata to the path 'images/mountains.jpg'
+        var uploadTask = messageRepository.addImage.child("images/"+ UUID.randomUUID().toString()).putFile(filePath!!, metadata)
 
-                        //TODO fill firestore with photoUrl so loadMessageList can show meassages with pictures
-                        message.photoUrl = doc.getString("photoUrl")
-                        message.avatarUrl = doc.getString("avatarUrl")
-                        messageList.add(message)
+        // Listen for state changes, errors, and completion of the upload.
+        uploadTask.addOnProgressListener { taskSnapshot ->
+            val progress = (100.0 * taskSnapshot.bytesTransferred) / taskSnapshot.totalByteCount
+            Log.w(TAG, "Upload is $progress% done")
+        }.addOnPausedListener {
+            Log.w(TAG, "Uploading is paused")
+        }.addOnFailureListener { e ->
+            Log.w(TAG, "Error uploading image", e)
+        }.addOnSuccessListener {
+            Log.w(TAG, "Success uploading image")
+        }
+
+        val ref = messageRepository.addImage.child("images/mountains.jpg")
+        uploadTask = ref.putFile(filePath!!)
+
+        val urlTask = uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
+            if (!task.isSuccessful) {
+                task.exception?.let {
+                    throw it
                 }
-
-                adapter.setMessages(messageList)
-
+            }
+            return@Continuation ref.downloadUrl
+        }).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val downloadUri = task.result
+                sendMessage("image", downloadUri.toString())
             } else {
-                Log.d(TAG, "Error getting documents: ", task.exception)
+
             }
         }
     }
 
-    private fun sendMessage() {
+    private fun sendMessage(type: String, imageRoute: String) {
         val user = authInstance.currentUser
         val message = hashMapOf<String, Any>()
+        val time = Timestamp.now()
 
         if (user != null) {
-            message["id"] = id.toString()
-            message["senderName"] = user.displayName.toString()
-            message["text"] = edit_message.text.toString()
-            message["date"] = Datetime().toString()
-            message["avatarUrl"] = user.photoUrl.toString()
-            message["photoUrl"] = ""
-        }
+            if (type == "text") {
 
-        //TODO få den til at tilføje en message
-        messageRepository.addMessage.document().set(message)
-            .addOnSuccessListener { documentReference ->
-                Log.d(TAG, "")
+                if (edit_message.text.toString().trim() != "") {
+
+                    message["id"] = id.toString()
+                    message["senderName"] = user.displayName.toString()
+                    message["text"] = edit_message.text.toString()
+                    message["date"] = time
+                    message["avatarUrl"] = user.photoUrl.toString()
+                    message["photoUrl"] = ""
+
+                    messageRepository.addMessage.document().set(message)
+                        .addOnSuccessListener { documentReference ->
+                            Log.d(TAG, "")
+
+                            val roomRef = roomRepository.updateRoom.document(id!!)
+                            roomRef
+                                .update("lastMessage", time)
+                                .addOnSuccessListener { Log.d(TAG, "DocumentSnapshot successfully updated!") }
+                                .addOnFailureListener { e -> Log.w(TAG, "Error updating document", e) }
+
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "Error adding document", e)
+                        }
+
+                    edit_message.setText("")
+                } else {
+                    alert("Can't send empty message", "Error") {
+                        yesButton { }
+                    }.show()
+                }
             }
-            .addOnFailureListener { e ->
-                Log.w(TAG, "Error adding document", e)
+            else if (type == "image")
+            {
+                message["id"] = id.toString()
+                message["senderName"] = user.displayName.toString()
+                message["text"] = ""
+                message["date"] = time
+                message["avatarUrl"] = user.photoUrl.toString()
+                message["photoUrl"] = imageRoute
+
+                messageRepository.addMessage.document().set(message)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Success adding message")
+
+                        val roomRef = roomRepository.updateRoom.document(id!!)
+                        roomRef
+                            .update("lastMessage", time)
+                            .addOnSuccessListener { Log.d(TAG, "DocumentSnapshot successfully updated!") }
+                            .addOnFailureListener { e -> Log.w(TAG, "Error updating document", e) }
+
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Error adding document", e)
+                    }
             }
+        }
     }
 
     private fun signOut(){
@@ -208,6 +288,7 @@ class ChatActivity : AppCompatActivity() {
             }
         }
         val loginIntent = Intent(this, LoginActivity::class.java)
+        loginIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(loginIntent)
     }
 }

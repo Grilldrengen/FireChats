@@ -105,9 +105,6 @@ class LoginActivity : AppCompatActivity() {
                 firebaseAuthWithGoogle(account!!)
             } catch (e: ApiException) {
                 // Google Sign In failed, update UI appropriately
-                alert("Sign In failed", "Sign in") {
-                    yesButton { }
-                }.show()
                 Log.w(TAG, "Google sign in failed", e)
             }
         }

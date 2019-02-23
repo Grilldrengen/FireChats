@@ -12,4 +12,6 @@ class RoomRepository() {
 
     val roomListener: CollectionReference = roomDao.roomListener()
 
+    val updateRoom: CollectionReference = roomDao.updateRoom()
+
 }

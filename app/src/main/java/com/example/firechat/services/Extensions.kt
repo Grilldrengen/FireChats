@@ -11,8 +11,7 @@ fun ViewGroup.inflate(@LayoutRes layoutRes: Int, attachToRoot: Boolean = false):
     return LayoutInflater.from(context).inflate(layoutRes, this, attachToRoot)
 }
 
-fun Datetime(): String {
+fun datetime(date: Date?): String {
     val dateFormate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.forLanguageTag("da_DK"))
-    val date = dateFormate.format(Date())
-    return date
+    return dateFormate.format(date)
 }

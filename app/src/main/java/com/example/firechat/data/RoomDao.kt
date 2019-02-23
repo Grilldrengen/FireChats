@@ -6,10 +6,12 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.storage.FirebaseStorage
 
 class RoomDao() {
 
     private val db = FirebaseFirestore.getInstance()
+    private val storage = FirebaseStorage.getInstance()
     private val roomsRef = db.collection("chatrooms")
 
     companion object {
@@ -23,6 +25,12 @@ class RoomDao() {
     }
 
     fun roomListener(): CollectionReference {
+        val docRef = roomsRef
+        Log.d(TAG, "roomListener: chatrooms")
+        return docRef
+    }
+
+    fun updateRoom(): CollectionReference {
         val docRef = roomsRef
         Log.d(TAG, "roomListener: chatrooms")
         return docRef

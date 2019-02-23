@@ -20,6 +20,23 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.firestore.EventListener
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.android.synthetic.main.activity_chatroom.*
+import android.R.id.edit
+import android.content.SharedPreferences
+import android.os.Build
+import android.view.View
+import androidx.annotation.RequiresApi
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.NonCancellable.children
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
+import org.jetbrains.anko.contentView
+import org.jetbrains.anko.design.longSnackbar
+import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
+
 
 class ChatroomActivity : AppCompatActivity() {
 
@@ -38,14 +55,14 @@ class ChatroomActivity : AppCompatActivity() {
         setContentView(R.layout.activity_chatroom)
 
         val actionBar = supportActionBar
+        actionBar?.setDisplayHomeAsUpEnabled(true);
+        actionBar?.setDisplayShowHomeEnabled(true)
         actionBar!!.title = "Chat Rooms"
 
         rv_chatroom_list.layoutManager = LinearLayoutManager(this)
         rv_chatroom_list.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
         rv_chatroom_list.itemAnimator = DefaultItemAnimator()
         rv_chatroom_list.adapter = adapter
-
-        loadRoomList()
 
         firestoreListener = roomRepository.roomListener.addSnapshotListener(EventListener { documentSnapshots, e ->
             if (e != null) {
@@ -60,9 +77,11 @@ class ChatroomActivity : AppCompatActivity() {
                 room.id = doc.id
                 room.name = doc.getString("name")
                 room.description = doc.getString("description")
+                room.lastMessage = doc.getTimestamp("lastMessage")?.toDate()
                 roomList.add(room)
             }
 
+            roomList.sortDescending()
             adapter.setRooms(roomList)
 
         })
@@ -80,6 +99,11 @@ class ChatroomActivity : AppCompatActivity() {
         googleSignInClient = GoogleSignIn.getClient(this, gso)
     }
 
+    override fun onResume() {
+        super.onResume()
+        EventBus.getDefault().register(this)
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu to use in the action bar
         val inflater = menuInflater
@@ -90,6 +114,9 @@ class ChatroomActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         // Handle presses on the action bar menu items
         when (item.itemId) {
+            android.R.id.home -> {
+                finishAffinity()
+            }
             R.id.action_sign_out -> {
                 signOut()
                 return true
@@ -98,35 +125,24 @@ class ChatroomActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
+    override fun onBackPressed() {
+        super.onBackPressed()
+        finishAffinity()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        EventBus.getDefault().unregister(this)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
 
         firestoreListener.remove()
     }
 
-    private fun loadRoomList() {
-        roomRepository.allRooms.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-
-                val roomList = mutableListOf<Room>()
-
-                for (doc in task.result!!) {
-                    val room = doc.toObject(Room::class.java)
-                    room.id = doc.id
-                    room.name = doc.getString("name")
-                    room.description = doc.getString("description")
-                    roomList.add(room)
-                }
-
-                adapter.setRooms(roomList)
-
-            } else {
-                Log.d(TAG, "Error getting documents: ", task.exception)
-            }
-        }
-    }
-
     private fun refreshList() {
+        //TODO doesn't work properly, it doesn't update but reset the changes just made by the firestorelistener
         roomRepository.allRooms.addOnCompleteListener { task ->
             if (task.isSuccessful) {
 
@@ -137,9 +153,12 @@ class ChatroomActivity : AppCompatActivity() {
                     room.id = doc.id
                     room.name = doc.getString("name")
                     room.description = doc.getString("description")
+                    room.lastMessage = doc.getTimestamp("lastMessage")?.toDate()
                     roomList.add(room)
+
                 }
 
+                roomList.sortDescending()
                 adapter.setRooms(roomList)
 
                 sr_chatroom.isRefreshing = false
@@ -167,6 +186,16 @@ class ChatroomActivity : AppCompatActivity() {
             }
         }
         val loginIntent = Intent(this, LoginActivity::class.java)
+        loginIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(loginIntent)
+    }
+
+
+
+    @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
+    fun onMessageEvent(messageEvent: String) {
+
+        contentView!!.longSnackbar(messageEvent)
+
     }
 }

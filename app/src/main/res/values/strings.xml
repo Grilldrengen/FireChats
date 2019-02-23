@@ -7,4 +7,9 @@
     <string name="sign_out">SIGN OUT</string>
     <string name="sign_out_menu">Sign Out</string>
     <string name="permission_read_explanation">Du skal give tilladelse til at se billeder</string>
+    <string name="default_notification_channel_id">600613</string>
+    <string name="fcm_message">New Message</string>
+    <string name="msg_subscribed">Subscribed to Fire Chat</string>
+    <string name="msg_subscribe_failed">Subscribe Failed</string>
+    <string name="msg_token_fmt">InstanceID Token: %s </string>
 </resources>
