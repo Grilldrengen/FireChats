@@ -48,7 +48,7 @@ class ChatroomAdapter(): RecyclerView.Adapter<ChatroomAdapter.Holder>() {
         }
 
         private fun onImageClick() {
-            itemView.context.startActivity<ChatActivity>("id" to holderData?.id)
+            itemView.context.startActivity<ChatActivity>("id" to holderData?.id, "name" to holderData?.name)
         }
     }
 }

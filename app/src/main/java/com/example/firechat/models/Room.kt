@@ -10,7 +10,6 @@ data class Room  (
     @ServerTimestamp var lastMessage: Date? = null
 ): Comparable<Room>{
     override fun compareTo(other: Room): Int {
-        return lastMessage!!.compareTo(other.lastMessage);
+        return lastMessage?.compareTo(other.lastMessage) ?: 0
     }
-
 }

@@ -15,7 +15,7 @@ import com.example.firechat.models.Message
 import com.example.firechat.repositories.MessageRepository
 import com.example.firechat.repositories.RoomRepository
 import com.example.firechat.services.checkPermission
-import com.example.firechat.services.requestPermissionForWrite
+import com.example.firechat.services.requestPermissionForRead
 import com.facebook.appevents.AppEventsLogger
 import com.facebook.login.LoginManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -31,7 +31,6 @@ import com.google.firebase.storage.UploadTask
 import kotlinx.android.synthetic.main.activity_chat.*
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.yesButton
-import java.io.File
 import java.util.*
 
 
@@ -44,6 +43,7 @@ class ChatActivity : AppCompatActivity() {
     private var roomRepository: RoomRepository = RoomRepository()
     private var filePath: Uri? = null
     private var id: String? = ""
+    private var name: String? = ""
 
     companion object {
         const val REQUEST_IMAGE = 1
@@ -55,22 +55,23 @@ class ChatActivity : AppCompatActivity() {
         AppEventsLogger.activateApp(application)
         setContentView(R.layout.activity_chat)
 
+        val bundle = intent.extras
+        if (bundle != null) {
+            if (bundle.containsKey("id")) {
+                id = bundle.getString("id")
+                name = bundle.getString("name")
+            }
+        }
+
         val actionBar = supportActionBar
         actionBar?.setDisplayHomeAsUpEnabled(true);
         actionBar?.setDisplayShowHomeEnabled(true)
-        actionBar?.title = "Chat Messages"
+        actionBar?.title = name
 
         rv_messages.layoutManager = LinearLayoutManager(this)
         rv_messages.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
         rv_messages.itemAnimator = DefaultItemAnimator()
         rv_messages.adapter = adapter
-
-        val bundle = intent.extras
-        if (bundle != null) {
-            if (bundle.containsKey("id")) {
-                id = bundle.getString("id")
-            }
-        }
 
         firestoreListener = messageRepository.messageListener.whereEqualTo("id", id!!).orderBy("date").limit(50).addSnapshotListener(EventListener { documentSnapshots, e ->
             if (e != null) {
@@ -104,15 +105,13 @@ class ChatActivity : AppCompatActivity() {
         btn_send_message.setOnClickListener { sendMessage("text", "") }
 
         imageView_add_image.setOnClickListener {
-            if(!checkPermission(this, 4)){
-                requestPermissionForWrite(this)
+            if(checkPermission(this, 4)){
+                val intent = Intent(Intent.ACTION_GET_CONTENT)
+                intent.type = "image/*"
+                startActivityForResult(intent, REQUEST_IMAGE)
             }
             else {
-                if (checkPermission(this, 4)) {
-                    val intent = Intent(Intent.ACTION_GET_CONTENT)
-                    intent.type = "image/*"
-                    startActivityForResult(intent, REQUEST_IMAGE)
-                }
+                requestPermissionForRead(this)
             }
         }
     }

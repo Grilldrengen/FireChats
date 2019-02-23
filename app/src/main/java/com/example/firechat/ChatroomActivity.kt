@@ -155,7 +155,6 @@ class ChatroomActivity : AppCompatActivity() {
                     room.description = doc.getString("description")
                     room.lastMessage = doc.getTimestamp("lastMessage")?.toDate()
                     roomList.add(room)
-
                 }
 
                 roomList.sortDescending()
@@ -189,8 +188,6 @@ class ChatroomActivity : AppCompatActivity() {
         loginIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(loginIntent)
     }
-
-
 
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     fun onMessageEvent(messageEvent: String) {

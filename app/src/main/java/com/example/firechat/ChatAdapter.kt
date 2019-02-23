@@ -9,13 +9,6 @@ import com.example.firechat.models.Message
 import com.example.firechat.services.datetime
 import com.example.firechat.services.inflate
 import kotlinx.android.synthetic.main.item_message.view.*
-import android.provider.MediaStore
-import android.graphics.Bitmap
-import android.net.Uri
-import java.net.URI
-import com.google.common.collect.TreeTraverser.using
-
-
 
 
 class ChatAdapter() : RecyclerView.Adapter<ChatAdapter.Holder>() {
