@@ -165,7 +165,8 @@ class ChatActivity : AppCompatActivity() {
             .build()
 
         // Upload file and metadata to the path 'images/mountains.jpg'
-        var uploadTask = messageRepository.addImage.child("images/"+ UUID.randomUUID().toString()).putFile(filePath!!, metadata)
+        val ref = messageRepository.addImage.child("images/"+ UUID.randomUUID().toString())
+        val uploadTask = ref.putFile(filePath!!, metadata)
 
         // Listen for state changes, errors, and completion of the upload.
         uploadTask.addOnProgressListener { taskSnapshot ->
@@ -179,10 +180,7 @@ class ChatActivity : AppCompatActivity() {
             Log.w(TAG, "Success uploading image")
         }
 
-        val ref = messageRepository.addImage.child("images/mountains.jpg")
-        uploadTask = ref.putFile(filePath!!)
-
-        val urlTask = uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
+        uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
             if (!task.isSuccessful) {
                 task.exception?.let {
                     throw it
