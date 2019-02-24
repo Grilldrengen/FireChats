@@ -6,6 +6,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 
+//Data layer to handle connection with firebase services
 class MessageDao {
 
     private val db = FirebaseFirestore.getInstance()
@@ -17,17 +18,20 @@ class MessageDao {
         const val TAG = "MessageDao"
     }
 
+    //Sets up reference to add a message
     fun addMessage(): CollectionReference {
         val docRef = messagesRef
         Log.d(TAG, "Add: messages")
         return docRef
     }
 
+    //Sets up a reference to the listener waiting for room updates
     fun messageListener(): CollectionReference {
         val docRef = messagesRef
         Log.d(TAG, "messageListener: messages")
         return docRef
     }
 
+    //Sets up reference to add a image to the storage
     val addImage: StorageReference = storageRef
 }

@@ -12,10 +12,13 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.lang.Exception
 
+//Used to handle application lifecycle events
 class App : Application() {
 
     companion object {
         private val TAG = this::class.java.simpleName
+        const val UNCAUGHT_EXCEPTION_STACKTRACE = "UNCAUGHT EXCEPTION. Stacktrace: "
+        const val UNCAUGHT_EXCEPTION_EXCEPTION = "UNCAUGHT EXCEPTION. Exception: "
     }
 
     // Called when the application is starting, before any other application objects have been created.
@@ -23,7 +26,7 @@ class App : Application() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
-
+        Thread.setDefaultUncaughtExceptionHandler { thread, e -> handleUncaugthException(thread, e) }
     }
 
     // Called by the system when the device configuration changes while your component is running.
@@ -36,11 +39,12 @@ class App : Application() {
         super.onLowMemory()
     }
 
+    //Used to catch uncaugth exceptions
     private fun handleUncaugthException(thread: Thread?, t: Throwable?){
         val stackTrace = StringWriter()
         t?.printStackTrace(PrintWriter(stackTrace))
-        Log.e(TAG, "UNCAUGHT EXCEPTION. Stacktrace: $stackTrace")
-        Log.e(TAG, "UNCAUGHT EXCEPTION. Exception: ${t as Exception}")
+        Log.e(TAG, UNCAUGHT_EXCEPTION_STACKTRACE + stackTrace)
+        Log.e(TAG, UNCAUGHT_EXCEPTION_EXCEPTION + t as Exception)
         System.exit(1)
     }
 }

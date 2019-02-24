@@ -4,6 +4,7 @@
     <string name="fb_login_protocol_scheme" translatable="false">fb383975665494242</string>
     <string name="chat">Chat Rooms</string>
     <string name="sign_out">SIGN OUT</string>
+    <string name="sign_in">Sign in</string>
     <string name="sign_out_menu">Sign Out</string>
     <string name="permission_read_explanation">You need to give permission before you can access gallery</string>
     <string name="permission_camera_explanation">You need to give permission before you can access camera</string>
@@ -13,4 +14,8 @@
     <string name="msg_subscribe_failed">Subscribe Failed</string>
     <string name="msg_token_fmt">InstanceID Token: %s </string>
     <string name="google_sign_failed">"Google sign in failed"</string>
+    <string name="sign_in_failed">Sign In failed</string>
+    <string name="ok">OK</string>
+    <string name="chat_rooms">Chat Rooms</string>
+    <string name="listen_failed">Listener failed</string>
 </resources>

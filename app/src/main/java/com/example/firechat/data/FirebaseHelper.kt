@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth
 
 val authInstance: FirebaseAuth = FirebaseHelper.authinstance()
 
+//Share auth instance through the application using singleton
 class FirebaseHelper() {
 
     companion object {

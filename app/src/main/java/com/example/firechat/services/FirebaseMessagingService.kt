@@ -17,47 +17,52 @@ import com.google.firebase.messaging.RemoteMessage
 import io.opencensus.trace.MessageEvent
 import org.greenrobot.eventbus.EventBus
 
-
+//Service to receive notifications and handle them
 class MyFirebaseMessagingService: FirebaseMessagingService() {
 
     companion object {
         private const val TAG = "MyFirebaseMsgService"
     }
 
+    //Firebase handles the notifications received here. When app is in background firebase send notification.
+    //When app is in foreground you can handle it here.
     override fun onMessageReceived(remoteMessage: RemoteMessage?) {
-        // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
         Log.d(TAG, "From: ${remoteMessage?.from}")
 
-        // Check if message contains a data payload.
+        // Check if message contains a data payload an log it.
         remoteMessage?.data?.isNotEmpty()?.let {
             Log.d(TAG, "Message data payload: " + remoteMessage.data)
 
             // Handle message within 10 seconds
+            // Shows Snackbar with message sendt to room user is subscribed to, if user is in the apps room list.
             EventBus.getDefault().post(remoteMessage.notification?.title + ": " + remoteMessage.notification?.body)
         }
 
-        // Check if message contains a notification payload.
+        // Check if message contains a notification payload and log it.
         remoteMessage?.notification?.let {
             Log.d(TAG, "Message Notification Body: ${it.body}")
         }
 
-        // Also if you intend on generating your own notifications as a result of a received FCM
-        // message, here is where that should be initiated. See sendNotification method below.
+        // Remake the standard used notification build to own personal preferences
+        // See method sendNotification further down in this class
     }
 
 
+    // Receive new tokens here when updated.
+    // This is where you should register the token when app is started and if app gets a new token,
+    // to make sure user will receive notifications from rooms he is subscribed to
     override fun onNewToken(token: String?) {
         Log.d(TAG, "Refreshed token: $token")
 
-        // If you want to send messages to this application instance or
-        // manage this apps subscriptions on the server side, send the
-        // Instance ID token to your app server.
         sendRegistrationToServer(token)
     }
 
+    // Use this method to handle new tokens
     private fun sendRegistrationToServer(token: String?) {
     }
 
+    // Notification build to override the standard build used when receiving notifications
+    // Remember channelId if used on devices with OREO where this is required
     private fun sendNotification(messageBody: String) {
         val intent = Intent(this, ChatActivity::class.java)
         intent.putExtra("id", "showmessage");

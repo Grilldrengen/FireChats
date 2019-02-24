@@ -4,8 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.firechat.data.authInstance
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
@@ -19,7 +17,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.SignInButton
 import com.google.android.gms.common.api.ApiException
-import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
@@ -43,6 +40,9 @@ class LoginActivity : AppCompatActivity() {
         const val FACEBOOK_ONCANCEL = "facebook:onCancel"
         const val FACEBOOK_ONERROR = "facebook:onError"
         const val FACEBOOK_ONSUCCES = "facebook:onSucces: "
+        const val FACEBOOK_AUTH = "handleFacebookAccessToken: "
+        const val GOOGLE_AUTH = "firebaseAuthWithGoogle: "
+        const val AUTH_FAILED = "Authentication failed"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,7 +51,7 @@ class LoginActivity : AppCompatActivity() {
         AppEventsLogger.activateApp(application)
         setContentView(R.layout.activity_login)
 
-        //Google
+        //Used to handle sign in with google accounts
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(TOKEN_ID)
             .requestEmail()
@@ -61,7 +61,7 @@ class LoginActivity : AppCompatActivity() {
         google_login_button.setSize(SignInButton.SIZE_STANDARD)
         google_login_button.setOnClickListener{ signIn() }
 
-        //Facebook
+        //Used to handle sign in with facebook accounts
         facebookCallbackManager = CallbackManager.Factory.create()
         facebook_login_button.setReadPermissions(EMAIL, PUBLIC)
         facebook_login_button.registerCallback(facebookCallbackManager,
@@ -85,7 +85,7 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        // Check if user is signed in (non-null) and call chat rooms if true.
+        // Check if user is signed in (non-null) and call ChatroomActivity if true.
         val currentUser = authInstance.currentUser
         if (currentUser != null) {
             val chatIntent = Intent(this, ChatroomActivity::class.java)
@@ -93,15 +93,16 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    //Handles login from facebook and google
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        //Facebook Pass the activity result back to the Facebook SDK
+        //Facebook Pass the activity result back to the Facebook SDK to see login was a success
         if (requestCode == FACEBOOK_SIGN_IN) {
             facebookCallbackManager.onActivityResult(requestCode, resultCode, data)
         }
 
-        //Google
+        //Checks if google sign in succeeded
         if (requestCode == GOOGLE_SIGN_IN) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             try {
@@ -115,36 +116,37 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    //called when sign in with googel account is started
     private fun signIn() {
         val signInIntent = googleSignInClient.signInIntent
         startActivityForResult(signInIntent, GOOGLE_SIGN_IN)
     }
 
-    //Facebook
+    //Authenticate facebook logins with firebase
     private fun firebaseAuthWithFacebook(token: AccessToken) {
-        Log.d(TAG, "handleFacebookAccessToken:$token")
+        Log.d(TAG, FACEBOOK_AUTH + token)
 
         val credential = FacebookAuthProvider.getCredential(token.token)
 
         authenticateLogin(credential)
     }
 
-    //Google
+    //Authenticate google logins with firebase
     private fun firebaseAuthWithGoogle(acct: GoogleSignInAccount) {
-        Log.d(TAG, "firebaseAuthWithGoogle:" + acct.id!!)
+        Log.d(TAG, GOOGLE_AUTH + acct.id!!)
 
         val credential = GoogleAuthProvider.getCredential(acct.idToken, null)
 
         authenticateLogin(credential)
     }
 
-    //TrySignIn
+    //Called to authenticate logins with firebase
     private fun authenticateLogin(credential: AuthCredential) {
         authInstance.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     // Sign in success
-                    Log.d(TAG, "signInWithCredential:success")
+                    Log.d(TAG, AUTH_FAILED)
                     val user = authInstance.currentUser
                     if (user != null) {
                         val chatIntent = Intent(this, ChatroomActivity::class.java)
@@ -153,9 +155,9 @@ class LoginActivity : AppCompatActivity() {
 
                 } else {
                     // If sign in fails, display a Message to the user.
-                    Log.w(TAG, "signInWithCredential:failure", task.exception)
+                    Log.w(TAG, AUTH_FAILED, task.exception)
 
-                    alert("Sign In failed", "Sign in") {
+                    alert(this.getString(R.string.sign_in_failed), this.getString(R.string.sign_in)) {
                         yesButton { }
                     }.show()
 

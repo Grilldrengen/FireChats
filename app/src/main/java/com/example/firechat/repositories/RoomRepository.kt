@@ -5,6 +5,7 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.QuerySnapshot
 
+//Forwards det data layer methods to the activities
 class RoomRepository() {
     private val roomDao: RoomDao = RoomDao()
 

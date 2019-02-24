@@ -12,8 +12,18 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.firechat.data.authInstance
 import com.example.firechat.models.Message
+import com.example.firechat.models.Message.Companion.AVATARURL
+import com.example.firechat.models.Message.Companion.DATE
+import com.example.firechat.models.Message.Companion.ID
+import com.example.firechat.models.Message.Companion.PHOTOURL
+import com.example.firechat.models.Message.Companion.SENDERNAME
+import com.example.firechat.models.Message.Companion.TEXT
+import com.example.firechat.models.Room.Companion.NAME
 import com.example.firechat.repositories.MessageRepository
 import com.example.firechat.repositories.RoomRepository
+import com.example.firechat.services.Constants
+import com.example.firechat.services.Constants.Companion.FACEBOOK_LINK
+import com.example.firechat.services.Constants.Companion.GOOGLE_LINK
 import com.example.firechat.services.checkPermission
 import com.example.firechat.services.requestPermissionForRead
 import com.facebook.appevents.AppEventsLogger
@@ -48,6 +58,9 @@ class ChatActivity : AppCompatActivity() {
     companion object {
         const val REQUEST_IMAGE = 1
         const val TAG = "ChatActivity"
+        const val TEXT = "text"
+        const val IMAGE = "image"
+        const val CONTENT_TYPE = "image/jpeg"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,27 +68,32 @@ class ChatActivity : AppCompatActivity() {
         AppEventsLogger.activateApp(application)
         setContentView(R.layout.activity_chat)
 
+        //Receive bundle data from the ChatroomActvity where this activity is called from
         val bundle = intent.extras
         if (bundle != null) {
-            if (bundle.containsKey("id")) {
-                id = bundle.getString("id")
-                name = bundle.getString("name")
+            if (bundle.containsKey(ID)) {
+                id = bundle.getString(ID)
+                name = bundle.getString(NAME)
             }
         }
 
+        //Sets up the actionbar. This secures there is a visible back button to use on newer phones.
         val actionBar = supportActionBar
         actionBar?.setDisplayHomeAsUpEnabled(true);
         actionBar?.setDisplayShowHomeEnabled(true)
         actionBar?.title = name
 
+        //Sets up the recylcerview. Decides the item animations, the divider decoration and sets the adapter
         rv_messages.layoutManager = LinearLayoutManager(this)
         rv_messages.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
         rv_messages.itemAnimator = DefaultItemAnimator()
         rv_messages.adapter = adapter
 
-        firestoreListener = messageRepository.messageListener.whereEqualTo("id", id!!).orderBy("date").limit(50).addSnapshotListener(EventListener { documentSnapshots, e ->
+        //This listener fills out the recylcerview when the user enters the list of rooms.
+        //The listener also makes sure to listen to updates in the data. This ensures the list is up to date all the time.
+        firestoreListener = messageRepository.messageListener.whereEqualTo(ID, id!!).orderBy(DATE).limit(50).addSnapshotListener(EventListener { documentSnapshots, e ->
             if (e != null) {
-                Log.e(TAG, "Listen failed!", e)
+                Log.e(TAG, this.getString(R.string.listen_failed), e)
                 return@EventListener
             }
 
@@ -84,26 +102,28 @@ class ChatActivity : AppCompatActivity() {
             for (doc in documentSnapshots!!) {
                 val message = doc.toObject(Message::class.java)
                 message.id = doc.id
-                message.senderName = doc.getString("senderName")
-                message.text = doc.getString("text")
-                message.date = doc.getTimestamp("date")?.toDate()
-                message.photoUrl = doc.getString("photoUrl")
-                message.avatarUrl = doc.getString("avatarUrl")
+                message.senderName = doc.getString(SENDERNAME)
+                message.text = doc.getString(TEXT)
+                message.date = doc.getTimestamp(DATE)?.toDate()
+                message.photoUrl = doc.getString(PHOTOURL)
+                message.avatarUrl = doc.getString(AVATARURL)
                 messageList.add(message)
             }
 
             adapter.setMessages(messageList)
         })
 
+        //This is build so we can sign out of google from the actionbar menu when needed.
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("1079804979782-biupcn69v8395q4kjvfd46vnqlk4qad3.apps.googleusercontent.com")
+            .requestIdToken(Constants.GOOGLE_TOKEN)
             .requestEmail()
             .build()
-
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-        btn_send_message.setOnClickListener { sendMessage("text", "") }
+        //Calls the sendMessage method and pass it the type of message it is and a imageroute if it is an image message
+        btn_send_message.setOnClickListener { sendMessage(TEXT, "") }
 
+        //Check for persmissoin on whether or not we can use the phones gallery. If yes we start the intent to open it. If not we do nothing.
         imageView_add_image.setOnClickListener {
             if(checkPermission(this, 4)){
                 val intent = Intent(Intent.ACTION_GET_CONTENT)
@@ -116,6 +136,7 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    // Inflate the menu to use in the action bar
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu to use in the action bar
         val inflater = menuInflater
@@ -123,6 +144,7 @@ class ChatActivity : AppCompatActivity() {
         return super.onCreateOptionsMenu(menu)
     }
 
+    //Handles presses on the action bar menu items. Generates the back button on the actionbar and also gives the option to sign out
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         // Handle presses on the action bar menu items
         when (item.itemId) {
@@ -137,6 +159,7 @@ class ChatActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
+    //Handles the result after starting the Gallery intent where user can pick an image to upload
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -150,17 +173,19 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    //We unsubscribe from the firestorelistener here to makes sure there is no memory leak
     override fun onDestroy() {
         super.onDestroy()
 
         firestoreListener.remove()
     }
 
+    //Uploads the image to firebase storage and gets a reference to use later when downloading the image from the storage
     private fun uploadImage() {
 
         // Create the file metadata
         val metadata = StorageMetadata.Builder()
-            .setContentType("image/jpeg")
+            .setContentType(CONTENT_TYPE)
             .build()
 
         // Upload file and metadata to the path 'images/mountains.jpg'
@@ -189,34 +214,38 @@ class ChatActivity : AppCompatActivity() {
         }).addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val downloadUri = task.result
-                sendMessage("image", downloadUri.toString())
+                sendMessage(IMAGE, downloadUri.toString())
             } else {
 
             }
         }
     }
 
+    //This method is called when user either clicks on the send button or clicks on the add image imageview
     private fun sendMessage(type: String, imageRoute: String) {
         val user = authInstance.currentUser
         val message = hashMapOf<String, Any>()
         val time = Timestamp.now()
 
         if (user != null) {
-            if (type == "text") {
+            if (type == TEXT) {
 
                 if (edit_message.text.toString().trim() != "") {
 
-                    message["id"] = id.toString()
-                    message["senderName"] = user.displayName.toString()
-                    message["text"] = edit_message.text.toString()
-                    message["date"] = time
-                    message["avatarUrl"] = user.photoUrl.toString()
-                    message["photoUrl"] = ""
+                    //Fills the message object with data before saving it to the cloud store
+                    message[ID] = id.toString()
+                    message[SENDERNAME] = user.displayName.toString()
+                    message[TEXT] = edit_message.text.toString()
+                    message[DATE] = time
+                    message[AVATARURL] = user.photoUrl.toString()
+                    message[PHOTOURL] = ""
 
+                    //Adds text message to the cloud store
                     messageRepository.addMessage.document().set(message)
                         .addOnSuccessListener { documentReference ->
                             Log.d(TAG, "")
 
+                            //Updates the date of the rooms latest message
                             val roomRef = roomRepository.updateRoom.document(id!!)
                             roomRef
                                 .update("lastMessage", time)
@@ -235,19 +264,22 @@ class ChatActivity : AppCompatActivity() {
                     }.show()
                 }
             }
-            else if (type == "image")
+            else if (type == IMAGE)
             {
-                message["id"] = id.toString()
-                message["senderName"] = user.displayName.toString()
-                message["text"] = ""
-                message["date"] = time
-                message["avatarUrl"] = user.photoUrl.toString()
-                message["photoUrl"] = imageRoute
+                //Fills the message object with data before saving it to the cloud store
+                message[ID] = id.toString()
+                message[SENDERNAME] = user.displayName.toString()
+                message[TEXT] = ""
+                message[DATE] = time
+                message[AVATARURL] = user.photoUrl.toString()
+                message[PHOTOURL] = imageRoute
 
+                //Adds image message to the cloud store
                 messageRepository.addMessage.document().set(message)
                     .addOnSuccessListener {
                         Log.d(TAG, "Success adding message")
 
+                        //Updates the date of the rooms latest message
                         val roomRef = roomRepository.updateRoom.document(id!!)
                         roomRef
                             .update("lastMessage", time)
@@ -262,16 +294,17 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    //This method is called from onOptionsSelected to give the user a way to sign completely out of the application.
     private fun signOut(){
         val user = authInstance.currentUser
         if (user != null) {
             for (item in user.providerData){
                 when (item.providerId) {
-                    "google.com" -> {
+                    GOOGLE_LINK -> {
                         authInstance.signOut()
                         googleSignInClient.signOut()
                     }
-                    "facebook.com" -> {
+                    FACEBOOK_LINK -> {
                         authInstance.signOut()
                         LoginManager.getInstance().logOut()
                     }

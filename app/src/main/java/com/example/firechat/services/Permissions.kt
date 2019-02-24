@@ -13,6 +13,7 @@ import com.google.android.material.snackbar.Snackbar
 const val READ_PERMISSION_REQ_CODE = 4
 const val CAMERA_PERMISSION_REQ_CODE = 6
 
+//Used to check if application have needed permissions
 fun checkPermission(context: Context, reqCode: Int): Boolean {
     when(reqCode){
         READ_PERMISSION_REQ_CODE -> {
@@ -31,13 +32,14 @@ fun checkPermission(context: Context, reqCode: Int): Boolean {
     }
 }
 
+//Used if application doesn't have the needed permissions to ask for it
 fun requestPermissionForRead(context: Context): Boolean {
     if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 
         if (ActivityCompat.shouldShowRequestPermissionRationale(context as Activity, Manifest.permission.READ_EXTERNAL_STORAGE)) {
 
             Snackbar.make(context.findViewById<View>(android.R.id.content), context.getString(R.string.permission_read_explanation), Snackbar.LENGTH_INDEFINITE)
-                .setAction("OK") { ActivityCompat.requestPermissions(context, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), READ_PERMISSION_REQ_CODE)}
+                .setAction(context.getString(R.string.ok)) { ActivityCompat.requestPermissions(context, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), READ_PERMISSION_REQ_CODE)}
                 .show()
             return false
         }
@@ -53,7 +55,7 @@ fun requestPermissionForCamera(context: Context): Boolean {
         if (ActivityCompat.shouldShowRequestPermissionRationale(context as Activity, Manifest.permission.CAMERA)) {
 
             Snackbar.make(context.findViewById<View>(android.R.id.content), context.getString(R.string.permission_camera_explanation), Snackbar.LENGTH_INDEFINITE)
-                .setAction("OK") { ActivityCompat.requestPermissions(context, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_REQ_CODE)}
+                .setAction(context.getString(R.string.ok)) { ActivityCompat.requestPermissions(context, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_REQ_CODE)}
                 .show()
             return false
         }
