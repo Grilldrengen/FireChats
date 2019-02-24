@@ -34,10 +34,15 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
 
     companion object {
-        var EMAIL = "email"
+        const val TOKEN_ID = "1079804979782-biupcn69v8395q4kjvfd46vnqlk4qad3.apps.googleusercontent.com"
+        const val EMAIL = "email"
+        const val PUBLIC = "public_profile"
         const val TAG = "Login"
         const val FACEBOOK_SIGN_IN = 64206
         const val GOOGLE_SIGN_IN = 1001
+        const val FACEBOOK_ONCANCEL = "facebook:onCancel"
+        const val FACEBOOK_ONERROR = "facebook:onError"
+        const val FACEBOOK_ONSUCCES = "facebook:onSucces: "
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,7 +53,7 @@ class LoginActivity : AppCompatActivity() {
 
         //Google
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("1079804979782-biupcn69v8395q4kjvfd46vnqlk4qad3.apps.googleusercontent.com")
+            .requestIdToken(TOKEN_ID)
             .requestEmail()
             .build()
 
@@ -58,21 +63,21 @@ class LoginActivity : AppCompatActivity() {
 
         //Facebook
         facebookCallbackManager = CallbackManager.Factory.create()
-        facebook_login_button.setReadPermissions(EMAIL, "public_profile")
+        facebook_login_button.setReadPermissions(EMAIL, PUBLIC)
         facebook_login_button.registerCallback(facebookCallbackManager,
             object : FacebookCallback<LoginResult> {
                 override fun onSuccess(loginResult: LoginResult) {
-                    Log.d(TAG, "facebook:onSuccess:$loginResult")
+                    Log.d(TAG, FACEBOOK_ONSUCCES + loginResult)
                     firebaseAuthWithFacebook(loginResult.accessToken)
                 }
 
                 override fun onCancel() {
-                    Log.d(TAG, "facebook:onCancel")
+                    Log.d(TAG, FACEBOOK_ONCANCEL)
                     // ...
                 }
 
                 override fun onError(error: FacebookException) {
-                    Log.d(TAG, "facebook:onError", error)
+                    Log.d(TAG, FACEBOOK_ONERROR, error)
                     // ...
                 }
             })
@@ -105,7 +110,7 @@ class LoginActivity : AppCompatActivity() {
                 firebaseAuthWithGoogle(account!!)
             } catch (e: ApiException) {
                 // Google Sign In failed, update UI appropriately
-                Log.w(TAG, "Google sign in failed", e)
+                Log.w(TAG, resources.getString(R.string.google_sign_failed), e)
             }
         }
     }

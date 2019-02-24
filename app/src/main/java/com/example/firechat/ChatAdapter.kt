@@ -4,14 +4,18 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.firechat.data.authInstance
 import com.example.firechat.models.Message
 import com.example.firechat.services.datetime
 import com.example.firechat.services.inflate
 import kotlinx.android.synthetic.main.item_message.view.*
+import com.bumptech.glide.request.RequestOptions
 
 
-class ChatAdapter() : RecyclerView.Adapter<ChatAdapter.Holder>() {
+
+
+class ChatAdapter: RecyclerView.Adapter<ChatAdapter.Holder>() {
 
     private var messages = emptyList<Message>()
 
@@ -46,12 +50,15 @@ class ChatAdapter() : RecyclerView.Adapter<ChatAdapter.Holder>() {
 
             if (!holderData.photoUrl.isNullOrBlank())
             {
+                val requestOptions = RequestOptions().diskCacheStrategy(DiskCacheStrategy.AUTOMATIC).fitCenter()
                 Glide.with(itemView.context)
                     .load(holderData.photoUrl)
+                    .apply(requestOptions)
                     .into(view.imageView_added_image)
+                view.imageView_added_image.visibility = View.VISIBLE
             }
             else {
-                view.imageView_added_image.visibility = View.INVISIBLE
+                view.imageView_added_image.visibility = View.GONE
             }
 
             if (user != null) {
@@ -63,6 +70,7 @@ class ChatAdapter() : RecyclerView.Adapter<ChatAdapter.Holder>() {
                         val googlePhotoUrl = holderData.avatarUrl
                         Glide.with(itemView.context).load(googlePhotoUrl)
                             .into(view.imageView_avatar)
+
                     } else if (item.providerId == "facebook.com") {
                         //Facebook
                         Glide.with(itemView.context).load(holderData.avatarUrl)
